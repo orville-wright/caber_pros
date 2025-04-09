@@ -14,7 +14,7 @@ session = HTMLSession()
 response = session.get(url)
 
 # Open data_file.txt in write mode
-with open('data_file.txt', 'w') as file:
+with open('data_file.txt', 'a') as file:
     # Write header to the file
     file.write("Section\tRow\tCompany\tURL\tDescription\n")
 
@@ -68,5 +68,8 @@ with open('data_file.txt', 'w') as file:
             xht_cleaned3 = re.sub(r'\'\]', '\'', str(xht_cleaned2))
 
             file.write(f"{outer}\t{row_count}\t'{xht_company_name[0]}'\t{xpath_href[0]}\t{xht_cleaned3}\n")
+            file.write(f"{outer}\t{row_count}\t'{xht_company_name[0]}'\t{xpath_href[0]}\t{xht_cleaned3}\n")
             row_count += 1
+            file.write(f"{outer}\t{row_count}\t'{xht_company_name[0]}'\t{xpath_href[0]}\t{xht_cleaned3}\n")
+        file.close()
     #print (f"{xht_cleaned3}" )
