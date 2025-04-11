@@ -1,4 +1,4 @@
-#! /home/dbrace/venv/dave02/bin/python3
+#! python3
 # -*- coding: utf-8 -*-
 
 from requests_html import HTMLSession
@@ -18,14 +18,14 @@ parser.add_argument('-v','--verbose', help='verbose error logging', action='stor
 parser.add_argument('-x','--xray', help='dump detailed debug data structures', action='store_true', dest='bool_xray', required=False, default=False)
 
 
-def extract_data(self, file):
+def extract_data(file):
     # URL to open
     url = "https://blogs.microsoft.com/blog/2025/03/10/https-blogs-microsoft-com-blog-2024-11-12-how-real-world-businesses-are-transforming-with-ai/"
     # Create a session
     session = HTMLSession()
     # Open the URL
     response = session.get(url)
-    self.file = file
+    file = file
 
     # Select the XPath item
     xpath_li = response.html.xpath('/html/body/div/div[2]/section/main/div[1]/article/div/ol[2]')
@@ -58,10 +58,9 @@ def extract_data(self, file):
                 try:
                     xht_company_name[0]
                 except IndexError:
-                    print (f"{outer}\t {li_element}\t BAD Data ! - Uncorrectible" )
+                    print (f"** {outer} / {li_element} / BAD Data ! - Uncorrectible" )
                     break
                 else:
-                    #print (f" {outer} / {li_element} / {xht_company_name[0]}" )
                     pass
                 
             xpath_href = response.html.xpath(formed_xpath)
@@ -72,14 +71,16 @@ def extract_data(self, file):
             xht_cleaned2 = re.sub(r'\[\'', '\'', str(xht_cleaned1))
             xht_cleaned3 = re.sub(r'\'\]', '\'', str(xht_cleaned2))
  
-            if args['bool_datafile'] is True:
-                self.file.write(f"{outer}\t{row_count}\t'{xht_company_name[0]}'\t{xpath_href[0]}\t{xht_cleaned3}\n")
-                
+            if file != None:
+                file.write(f"{outer}\t{row_count}\t'{xht_company_name[0]}'\t{xpath_href[0]}\t{xht_cleaned3}\n")
+            else:
+                print (f" {outer} / {li_element} / {xht_company_name[0]}\t\t{xpath_href[0]}" )
+
             row_count += 1
     return
     #print (f"{xht_cleaned3}" )
 
-def close_file():
+def close_file(file):
     file.close()
     print ( "Closing file data_file.txt" )
     print ( " " )
@@ -107,9 +108,12 @@ def main():
             file.write("Section\tRow\tCompany\tURL\tDescription\n")
             print (f" " )
             extract_data(file)
-            close_file()
+            close_file(file)
     else:
-        extract_data()
+        print ( " " )
+        print ( f"data file will NOT be created" )
+        file = None
+        extract_data(file)
 
 
 if __name__ == '__main__':
