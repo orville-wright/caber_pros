@@ -6,7 +6,17 @@ import re
 import argparse
 import logging
 import sys
+import os
+from dotenv import load_dotenv
 
+#from google.cloud import aiplatform
+from google import genai
+from google.genai import types
+
+
+# Load environment variables from .env file
+load_dotenv()
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Globals
 global args
@@ -84,6 +94,81 @@ def extract_data():
 # +------------------------------------------------
 # | 2 - This is where you want to add LLM summarization, sentiment analysis, etc.
 # +------------------------------------------------
+def summarize_text_with_gemini(text: str) -> str:
+    """
+    Summarize the given text using Google Gemini Pro 2.5 via Vertex AI.
+    """
+    summarize_instructions = "Summarize the following text in a concise manner."
+    text_final = text + " " + summarize_instructions
+    
+    try:
+        client = genai.Client(api_key=GOOGLE_API_KEY)
+        response = client.models.generate_content(
+            model="google/gemini-pro-2.5", 
+            contents=[text],
+            config=types.GenerateContentConfig(
+                system_instruction="You are an expert summarizer who undrestand html and business language. Summarize the text in a concise manner.",
+                max_output_tokens=256,
+                temperature=0.2
+            )
+        )
+        
+        #content=text, temperature=0.2, max_output_tokens=256, top_p=0.8, top_k=40, temperature=0.2
+        
+        # Extract the summary from the response
+        #summary = response.predictions[0].get("content", "")
+        return response.text
+    except Exception as e:  
+        return f"Error during summarization: {e}"
+    
+    
+    """ 
+    try:
+        # Initialize the Vertex AI client
+        client = aiplatform.gapic.PredictionServiceClient()
+
+        # Define the endpoint for Gemini Pro 2.5 model
+        # NOTE: Replace 'your-project-id' and 'your-location' with actual values or environment variables if available
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT") or "your-project-id"
+        location = os.getenv("GOOGLE_CLOUD_LOCATION") or "us-central1"
+        endpoint = f"projects/{project_id}/locations/{location}/publishers/google/models/gemini-pro-2.5/versions/1"
+
+        # Prepare the prediction request
+        instances = [
+            {
+                "content": text,
+                "mime_type": "text/plain",
+                "temperature": 0.2,
+                "max_output_tokens": 256,
+                "top_p": 0.8,
+                "top_k": 40,
+            }
+        ]
+
+        parameters = {
+            "temperature": 0.2,
+            "maxOutputTokens": 256,
+            "topP": 0.8,
+            "topK": 40,
+        }
+
+        response = client.predict(
+            endpoint=endpoint,
+            instances=instances,
+            parameters=parameters,
+        )
+
+        # Extract the summary from the response
+        summary = response.predictions[0].get("content", "")
+        return summary
+
+    except Exception as e:
+        return f"Error during summarization: {e}"
+    """
+
+# +------------------------------------------------
+# | 3
+# +------------------------------------------------
 def scrape_and_display_text(url):
     session = HTMLSession()
     try:
@@ -93,8 +178,13 @@ def scrape_and_display_text(url):
         text_content = response.html.xpath('//body//text()')
         # Join and clean text content
         cleaned_text = ' '.join([t.strip() for t in text_content if t.strip()])
-        print(f"\n--- Text content from {url} ---\n")
-        print(cleaned_text[:2000])  # Display first 2000 characters for brevity
+        print(f"\n--- Text content ---\n")
+        print(cleaned_text[:1000])  # Display first 2000 characters for brevity
+
+        # Summarize the cleaned text using Gemini Pro 2.5
+        summary = summarize_text_with_gemini(cleaned_text[:2000])
+        print("\n--- Summary ---\n")
+        print(summary)
         print("\n--- End of content ---\n")
     except Exception as e:
         print(f"Error scraping URL {url}: {e}")
@@ -102,7 +192,7 @@ def scrape_and_display_text(url):
         session.close()
 
 # +------------------------------------------------
-# | 3
+# | 4
 # +------------------------------------------------
 def close_file(file):
     file.close()
@@ -136,7 +226,7 @@ def main():
 
     if args['bool_readurl']:
         print ( " " )
-        print ( f"Recursive;y scraping every URL" )    # We will scrape URLs found in the main extraction process and display text
+        print ( f"Recursively scraping every URL" )    # We will scrape URLs found in the main extraction process and display text
         final_list = extract_data()
         for row in final_list:
             data_url = row["URL"]
@@ -160,4 +250,3 @@ def main():
 # ==========================================================
 if __name__ == '__main__':
     main()
-
