@@ -102,6 +102,10 @@ def summarize_text_with_gemini(text: str) -> str:
     text_final = text + " " + summarize_instructions
     
     try:
+        print (f"=================== Summarization ===========================")
+        print (f"Summarizing text with Gemini Pro 2.5...\n{text}")
+        print (f"=================== Summarization ===========================")
+        # Initialize the Vertex AI client
         client = genai.Client(api_key=GOOGLE_API_KEY)
         response = client.models.generate_content(
             model="google/gemini-pro-2.5", 
